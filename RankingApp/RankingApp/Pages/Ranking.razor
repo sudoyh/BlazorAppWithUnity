@@ -1,0 +1,152 @@
+﻿@page "/ranking"
+@using SharedData.Models;
+@using RankingApp.Data.Services;
+
+@inject RankingService RankingService  
+
+
+
+<h3>Ranking</h3>
+
+<AuthorizeView>
+    <Authorized>
+
+
+        @if (_gameResults == null)
+        {
+            <p><em>Loading...</em></p>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>UserName</th>
+                        <th>Score</th>
+                        <th>Date</th>
+                        <th>Edit</th>
+                        <th>Delete</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var gameResult in _gameResults)
+                    {
+                        <tr>
+                            <td>@gameResult.UserName</td>
+                            <td>@gameResult.Score</td>
+                            <td>@gameResult.PlayedOn.ToString()</td>
+                            <td>
+                                <button class="btn btn-primary" @onclick="()=>UpdateGameResult(gameResult)">Edit</button>
+                            </td>
+                            <td>
+                                <button class="btn btn-primary" @onclick="()=>DeleteGameResult(gameResult)">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <p>
+                <button class="btn btn-primary" @onclick="AddGameResult">add</button>
+            </p>
+
+
+            @if(_showPopup)
+            {
+                <div class="modal" style="display:block" role="dialog">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3 claass="modal-title">Add/Update GameResult</h3>
+
+                                <button type="button" class="close" @onclick="ClosePopup">
+                                    <spaan area-hidden>X</spaan>
+
+                                </button>
+
+                            </div>
+                            <div class="modal-body">
+                                <label for="UserNaame">Username</label>
+                                <input class="form-control" text="text" placeholder="UserName" @bind-value="_gameResult.UserName" />
+                                <label for="UserNaame">Score</label>
+                                <input class="form-control" text="text" placeholder="UserName" @bind-value="_gameResult.Score" />
+                                <button class="btn btn-primary" @onclick="SavegameResult">
+                                    Save 
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }   
+
+
+        }
+
+    </Authorized>
+
+    <NotAuthorized>
+        You are not authorized
+    </NotAuthorized>
+
+</AuthorizeView>
+
+
+
+
+@code {
+    List<GameResult> _gameResults;
+
+    bool _showPopup;
+    GameResult _gameResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _gameResults = await RankingService.GetGameResultAsync();
+    }
+
+
+    void AddGameResult()
+    {
+        _showPopup = true;
+        _gameResult = new GameResult(){ Id = 0 };
+    }   
+
+    void ClosePopup()
+    {
+        _showPopup = false;
+    }   
+
+
+    void UpdateGameResult(GameResult gameResult)
+    {
+        _showPopup = true;
+        _gameResult = gameResult;
+    }   
+
+    async Task DeleteGameResult(GameResult gameResult)
+    {
+        var result = RankingService.DeleteGameResult(gameResult); 
+        _gameResults = await RankingService.GetGameResultAsync();   
+    }   
+
+
+    async Task SavegameResult()
+    {
+        if(_gameResult.Id == 0)
+        {
+           _gameResult.PlayedOn = DateTime.Now; 
+           var result = await RankingService.AddGameResult(_gameResult);
+        }
+        else
+        {
+           var result = await RankingService.UpdateGameResult(_gameResult);    
+        }
+        _showPopup = false; 
+        _gameResults = await RankingService.GetGameResultAsync(); 
+    }
+
+
+
+}
